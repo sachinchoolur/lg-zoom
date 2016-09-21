@@ -1,6 +1,6 @@
-![travis](https://travis-ci.org/sachinchoolur/lg-zoom.js.svg?branch=master)
-![bower](https://img.shields.io/bower/v/lg-zoom.js.svg)
-![npm](https://img.shields.io/npm/v/lg-zoom.js.svg)
+![travis](https://travis-ci.org/sachinchoolur/lg-zoom.svg?branch=master)
+![bower](https://img.shields.io/bower/v/lg-zoom.svg)
+![npm](https://img.shields.io/npm/v/lg-zoom.svg)
 
 # Zoom module for [lightGallery](http://sachinchoolur.github.io/lightGallery/)
 A customizable, modular, responsive, lightbox gallery plugin for jQuery.
@@ -25,7 +25,7 @@ Installation
 You can install lightgallery zoom plugin using the [Bower](http://bower.io) package manager.
 
 ```sh
-$ bower install lg-zoom.js --save
+$ bower install lg-zoom --save
 ```
 
 #### npm
@@ -33,7 +33,7 @@ $ bower install lg-zoom.js --save
 You can also find lightgallery zoom plugin on [npm](http://npmjs.org).
 
 ```sh
-$ npm install lg-zoom.js
+$ npm install lg-zoom
 ```
 #### Download from Github
 
@@ -47,7 +47,7 @@ Include lg-zoom plugin after lightgallery.min.js.
     <!-- Include lightGallery -->
     <script src="js/lightgallery.min.js"></script>
     
-    <!-- Include lg-zoom.js -->
+    <!-- Include lg-zoom -->
     <script src="js/lg-zoom.min.js"></script>
     
     <!-- Include other lightgallery plugins (Optional) -->
