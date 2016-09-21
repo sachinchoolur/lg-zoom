@@ -3,7 +3,7 @@
 ![npm](https://img.shields.io/npm/v/lg-zoom.js.svg)
 
 # Zoom module for [lightGallery](http://sachinchoolur.github.io/lightGallery/)
-Full featured javascript gallery. Zero dependencies.
+A customizable, modular, responsive, lightbox gallery plugin for jQuery.
 ![lightgallery](https://raw.githubusercontent.com/sachinchoolur/lightGallery/master/lib/lg.png)
 
 Main features
@@ -61,7 +61,7 @@ Include lg-zoom plugin after lightgallery.min.js.
 [Docs](http://sachinchoolur.github.io/lightGallery/docs/api.html#lg-zoom)
 -----
 
-License
+<!-- License
 ---
 
 #### Commercial license
@@ -70,4 +70,4 @@ If you want to use lightGallery to develop commercial sites, themes, projects, a
 #### Open source license
 
 If you are creating an open source application under a license compatible with the GNU GPL license v3, you may use this project under the terms of the GPLv3.
-
+ -->
