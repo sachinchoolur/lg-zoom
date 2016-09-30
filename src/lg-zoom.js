@@ -1,4 +1,4 @@
-(function($, window, document, undefined) {
+(function() {
 
     'use strict';
 
@@ -471,4 +471,4 @@
 
     $.fn.lightGallery.modules.zoom = Zoom;
 
-})(jQuery, window, document);
+})();

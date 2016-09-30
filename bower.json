@@ -1,6 +1,6 @@
 {
   "name": "lg-zoom",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Zoom module for lightgallery.",
   "main": [
     "dist/lg-zoom.min.js"
