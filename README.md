@@ -39,6 +39,9 @@ $ npm install lg-zoom
 
 You can also directly download lg-zoom from github.
 
+#### CDN
+If you prefer to use a CDN you can load files via [jsdelivr](https://www.jsdelivr.com/projects/lg-zoom)
+
 #### Include Javascript files
 Include lg-zoom plugin after lightgallery.min.js.
 ``` html
