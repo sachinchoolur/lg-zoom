@@ -2,11 +2,22 @@
 
     'use strict';
 
+    var getUseLeft = function() {
+        var useLeft = false;
+        var isChrome = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./);
+        if (isChrome && parseInt(isChrome[2], 10) < 54) {
+            useLeft = true;
+        }
+
+        return useLeft;
+    };
+
     var defaults = {
         scale: 1,
         zoom: true,
         actualSize: true,
-        enableZoomAfter: 300
+        enableZoomAfter: 300,
+        useLeftForZoom: getUseLeft()
     };
 
     var Zoom = function(element) {
@@ -36,6 +47,12 @@
 
         if (_this.core.s.actualSize) {
             zoomIcons += '<span id="lg-actual-size" class="lg-icon"></span>';
+        }
+
+        if (_this.core.s.useLeftForZoom) {
+            _this.core.$outer.addClass('lg-use-left-for-zoom');
+        } else {
+            _this.core.$outer.addClass('lg-use-transition-for-zoom');
         }
 
         this.core.$outer.find('.lg-toolbar').append(zoomIcons);
@@ -87,10 +104,14 @@
 
             $image.css('transform', 'scale3d(' + scaleVal + ', ' + scaleVal + ', 1)').attr('data-scale', scaleVal);
 
-            $image.parent().css({
-                left: -x + 'px',
-                top: -y + 'px'
-            }).attr('data-x', x).attr('data-y', y);
+            if (_this.core.s.useLeftForZoom) {
+                $image.parent().css({
+                    left: -x + 'px',
+                    top: -y + 'px'
+                }).attr('data-x', x).attr('data-y', y);
+            } else {
+                $image.parent().css('transform', 'translate3d(-' + x + 'px, -' + y + 'px, 0)').attr('data-x', x).attr('data-y', y);
+            }
         };
 
         var callScale = function() {
@@ -284,10 +305,15 @@
                 }
 
                 if ((Math.abs(endCoords.x - startCoords.x) > 15) || (Math.abs(endCoords.y - startCoords.y) > 15)) {
-                    _$el.css({
-                        left: distanceX + 'px',
-                        top: distanceY + 'px'
-                    });
+
+                    if (_this.core.s.useLeftForZoom) {
+                        _$el.css({
+                            left: distanceX + 'px',
+                            top: distanceY + 'px'
+                        });
+                    } else {
+                        _$el.css('transform', 'translate3d(' + distanceX + 'px, ' + distanceY + 'px, 0)');
+                    }
                 }
 
             }
@@ -375,10 +401,14 @@
                     distanceX = -Math.abs(_$el.attr('data-x'));
                 }
 
-                _$el.css({
-                    left: distanceX + 'px',
-                    top: distanceY + 'px'
-                });
+                if (_this.core.s.useLeftForZoom) {
+                    _$el.css({
+                        left: distanceX + 'px',
+                        top: distanceY + 'px'
+                    });
+                } else {
+                    _$el.css('transform', 'translate3d(' + distanceX + 'px, ' + distanceY + 'px, 0)');
+                }
             }
         });
 
@@ -447,10 +477,14 @@
                 distanceX = -Math.abs(_$el.attr('data-x'));
             }
 
-            _$el.css({
-                left: distanceX + 'px',
-                top: distanceY + 'px'
-            });
+            if (_this.s.core.useLeftForZoom) {
+                _$el.css({
+                    left: distanceX + 'px',
+                    top: distanceY + 'px'
+                });
+            } else {
+                _$el.css('transform', 'translate3d(' + distanceX + 'px, ' + distanceY + 'px, 0)');
+            }
 
         }
     };
@@ -470,5 +504,5 @@
     };
 
     $.fn.lightGallery.modules.zoom = Zoom;
-    
+
 })();
