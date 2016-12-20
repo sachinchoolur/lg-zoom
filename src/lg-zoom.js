@@ -477,7 +477,7 @@
                 distanceX = -Math.abs(_$el.attr('data-x'));
             }
 
-            if (_this.s.core.useLeftForZoom) {
+            if (_this.core.s.useLeftForZoom) {
                 _$el.css({
                     left: distanceX + 'px',
                     top: distanceY + 'px'
