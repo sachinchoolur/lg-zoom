@@ -20,6 +20,8 @@
         useLeftForZoom: getUseLeft()
     };
 
+    var self = null;
+
     var Zoom = function(element) {
 
         this.core = $(element).data('lightGallery');
@@ -37,7 +39,70 @@
             this.pageY = ($(window).height() / 2) + $(window).scrollTop();
         }
 
+        self = this;
+
         return this;
+    };
+
+    var scale = 1;
+
+    /**
+     * @desc Image zoom
+     * Translate the wrap and scale the image to get better user experience
+     *
+     * @param {String} scaleVal - Zoom decrement/increment value
+     */
+    var zoom = function(scaleVal) {
+
+        var $image = self.core.$outer.find('.lg-current .lg-image');
+        var _x;
+        var _y;
+
+        // Find offset manually to avoid issue after zoom
+        var offsetX = ($(window).width() - $image.prop('offsetWidth')) / 2;
+        var offsetY = (($(window).height() - $image.prop('offsetHeight')) / 2) + $(window).scrollTop();
+
+        _x = self.pageX - offsetX;
+        _y = self.pageY - offsetY;
+
+        var x = (scaleVal - 1) * (_x);
+        var y = (scaleVal - 1) * (_y);
+
+        $image.css('transform', 'scale3d(' + scaleVal + ', ' + scaleVal + ', 1)').attr('data-scale', scaleVal);
+
+        if (self.core.s.useLeftForZoom) {
+            $image.parent().css({
+                left: -x + 'px',
+                top: -y + 'px'
+            }).attr('data-x', x).attr('data-y', y);
+        } else {
+            $image.parent().css('transform', 'translate3d(-' + x + 'px, -' + y + 'px, 0)').attr('data-x', x).attr('data-y', y);
+        }
+    };
+
+    var callScale = function() {
+        if (scale > 1) {
+            self.core.$outer.addClass('lg-zoomed');
+        } else {
+            self.resetZoom();
+        }
+
+        if (scale < 1) {
+            scale = 1;
+        }
+
+        zoom(scale);
+    };
+
+    var pinchStart = null;
+    var pinchScale = 0;
+
+    var pinchDist = function (e)
+    {
+        return Math.sqrt(
+            (e.touches[0].pageX - e.touches[1].pageX) * (e.touches[0].pageX - e.touches[1].pageX) +
+            (e.touches[0].pageY - e.touches[1].pageY) * (e.touches[0].pageY - e.touches[1].pageY)
+        );
     };
 
     Zoom.prototype.init = function() {
@@ -78,55 +143,6 @@
                 _this.core.$slide.eq(index).addClass('lg-zoomable');
             }, _speed + 30);
         });
-
-        var scale = 1;
-        /**
-         * @desc Image zoom
-         * Translate the wrap and scale the image to get better user experience
-         *
-         * @param {String} scaleVal - Zoom decrement/increment value
-         */
-        var zoom = function(scaleVal) {
-
-            var $image = _this.core.$outer.find('.lg-current .lg-image');
-            var _x;
-            var _y;
-
-            // Find offset manually to avoid issue after zoom
-            var offsetX = ($(window).width() - $image.prop('offsetWidth')) / 2;
-            var offsetY = (($(window).height() - $image.prop('offsetHeight')) / 2) + $(window).scrollTop();
-
-            _x = _this.pageX - offsetX;
-            _y = _this.pageY - offsetY;
-
-            var x = (scaleVal - 1) * (_x);
-            var y = (scaleVal - 1) * (_y);
-
-            $image.css('transform', 'scale3d(' + scaleVal + ', ' + scaleVal + ', 1)').attr('data-scale', scaleVal);
-
-            if (_this.core.s.useLeftForZoom) {
-                $image.parent().css({
-                    left: -x + 'px',
-                    top: -y + 'px'
-                }).attr('data-x', x).attr('data-y', y);
-            } else {
-                $image.parent().css('transform', 'translate3d(-' + x + 'px, -' + y + 'px, 0)').attr('data-x', x).attr('data-y', y);
-            }
-        };
-
-        var callScale = function() {
-            if (scale > 1) {
-                _this.core.$outer.addClass('lg-zoomed');
-            } else {
-                _this.resetZoom();
-            }
-
-            if (scale < 1) {
-                scale = 1;
-            }
-
-            zoom(scale);
-        };
 
         var actualSize = function(event, $image, index, fromIcon) {
             var w = $image.prop('offsetWidth');
@@ -230,6 +246,16 @@
             _this.zoomSwipe();
         }
 
+    };
+
+    Zoom.prototype.pinchStart = function(e) {
+        pinchStart = pinchDist(e);
+        pinchScale = scale;
+    };
+
+    Zoom.prototype.pinchMove = function(e) {
+        scale = pinchScale + ((pinchDist(e) - pinchStart) / 100);
+        callScale();
     };
 
     // Reset zoom effect
