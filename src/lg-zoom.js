@@ -222,13 +222,9 @@
         });
 
         // Drag option after zoom
-        if (!_this.core.isTouch) {
-            _this.zoomDrag();
-        }
+        _this.zoomDrag();
 
-        if (_this.core.isTouch) {
-            _this.zoomSwipe();
-        }
+        _this.zoomSwipe();
 
     };
 
