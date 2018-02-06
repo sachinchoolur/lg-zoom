@@ -34,8 +34,8 @@
             this.positionChanged = false;
 
             // Set the initial value center
-            this.pageX = $(window).width() / 2;
-            this.pageY = ($(window).height() / 2) + $(window).scrollTop();
+            this.pageX = this.core.$outer.width() / 2;
+            this.pageY = (this.core.$outer.height() / 2) + $(window).scrollTop();
 
             this.scale = 1;
         }
@@ -101,8 +101,8 @@
         var _y;
 
         // Find offset manually to avoid issue after zoom
-        var offsetX = ($(window).width() - $image.prop('offsetWidth')) / 2;
-        var offsetY = (($(window).height() - $image.prop('offsetHeight')) / 2) + $(window).scrollTop();
+        var offsetX = (this.core.$outer.width() - $image.prop('offsetWidth')) / 2;
+        var offsetY = ((this.core.$outer.height() - $image.prop('offsetHeight')) / 2) + $(window).scrollTop();
 
         var originalX;
         var originalY;
@@ -162,6 +162,17 @@
         $imageWrap.attr('data-x', style.x).attr('data-y', style.y);
 
     };
+
+    Zoom.prototype.setZoomSwipeStyles = function($el, distance) {
+        if (this.core.s.useLeftForZoom) {
+            $el.css({
+                left: distance.x + 'px',
+                top: distance.y + 'px'
+            });
+        } else {
+            $el.css('transform', 'translate3d(' + distance.x + 'px, ' + distance.y + 'px, 0)');
+        }
+    }
 
     /**
      * @param index - Index of the current slide
@@ -344,38 +355,37 @@
         this.setPageCords();
     };
 
+    Zoom.prototype.getTouchDistance = function(e) {
+        return Math.sqrt(
+            (e.originalEvent.targetTouches[0].pageX - e.originalEvent.targetTouches[1].pageX) * (e.originalEvent.targetTouches[0].pageX - e.originalEvent.targetTouches[1].pageX) +
+            (e.originalEvent.targetTouches[0].pageY - e.originalEvent.targetTouches[1].pageY) * (e.originalEvent.targetTouches[0].pageY - e.originalEvent.targetTouches[1].pageY));
+    }
+
     Zoom.prototype.pinchZoom = function (){
-        var initDist = 0;
+        var startDist = 0;
         var pinchStarted = false;
         var initScale = 1;
         var _this = this;
 
         _this.core.$slide.on('touchstart.lg', function (e) {
 
-            //console.log(e.originalEvent.targetTouches)
             if (e.originalEvent.targetTouches.length === 2) {
                 initScale = _this.scale || 1;
                 _this.core.$outer.removeClass('lg-zoom-drag-transition lg-zoom-dragging');
 
                 _this.core.touchAction = 'pinch';
 
-                //console.log('calling touchastart')
-                initDist =
-                    Math.sqrt(
-                        (e.originalEvent.targetTouches[0].pageX - e.originalEvent.targetTouches[1].pageX) * (e.originalEvent.targetTouches[0].pageX - e.originalEvent.targetTouches[1].pageX) +
-                        (e.originalEvent.targetTouches[0].pageY - e.originalEvent.targetTouches[1].pageY) * (e.originalEvent.targetTouches[0].pageY - e.originalEvent.targetTouches[1].pageY));
+                startDist = _this.getTouchDistance(e);
+                    
             }
 
         });
 
         _this.core.$slide.on('touchmove.lg', function (e) {
             if (e.originalEvent.targetTouches.length === 2 && _this.core.touchAction === 'pinch') {
-                var dist =
-                    Math.sqrt(
-                        (e.originalEvent.targetTouches[0].pageX - e.originalEvent.targetTouches[1].pageX) * (e.originalEvent.targetTouches[0].pageX - e.originalEvent.targetTouches[1].pageX) +
-                        (e.originalEvent.targetTouches[0].pageY - e.originalEvent.targetTouches[1].pageY) * (e.originalEvent.targetTouches[0].pageY - e.originalEvent.targetTouches[1].pageY));
+                var endDist = _this.getTouchDistance(e);
 
-                var distance = initDist - dist;
+                var distance = startDist - endDist;
                 if(!pinchStarted && Math.abs(distance) > 5) {
                     pinchStarted = true;
                 }
@@ -392,7 +402,7 @@
         _this.core.$slide.on('touchend.lg', function () {
             if(_this.core.touchAction === 'pinch') {
                 pinchStarted = false;
-                initDist = 0;
+                startDist = 0;
                 if(_this.scale <= 1) {
                     _this.resetZoom();
                 } else {
@@ -425,6 +435,7 @@
 
         var dataX = 0;
         var dataY = 0;
+        var possibleSwipeCords;
 
 
         var _$el;
@@ -451,6 +462,8 @@
                 dataY = _$el.attr('data-y');
                 dataX = _$el.attr('data-x');
 
+                possibleSwipeCords = _this.getPossibleSwipeCords();
+
                 // reset opacity and transition duration
                 _this.core.$outer.addClass('lg-zoom-dragging lg-zoom-drag-transition');
             }
@@ -462,40 +475,19 @@
             if (e.originalEvent.targetTouches.length === 1 && _this.core.touchAction ==='zoomSwipe') {
                 _this.core.touchAction = 'zoomSwipe';
 
-                
-                var distanceX;
-                var distanceY;
-
                 e.preventDefault();
-                isMoved = true;
-
+                
                 endCoords = {
                     x: e.originalEvent.targetTouches[0].pageX,
                     y: e.originalEvent.targetTouches[0].pageY
                 };
 
-                if (allowY) {
-                    distanceY = (-Math.abs(dataY)) + (endCoords.y - startCoords.y);
-                } else {
-                    distanceY = -Math.abs(dataY);
-                }
-
-                if (allowX) {
-                    distanceX = (-Math.abs(dataX)) + (endCoords.x - startCoords.x);
-                } else {
-                    distanceX = -Math.abs(dataX);
-                }
-
+                var distance = _this.getZoomSwipeCords(startCoords, endCoords, allowX, allowY, possibleSwipeCords, dataY, dataX);
+                
                 if ((Math.abs(endCoords.x - startCoords.x) > 15) || (Math.abs(endCoords.y - startCoords.y) > 15)) {
-
-                    if (_this.core.s.useLeftForZoom) {
-                        _$el.css({
-                            left: distanceX + 'px',
-                            top: distanceY + 'px'
-                        });
-                    } else {
-                        _$el.css('transform', 'translate3d(' + distanceX + 'px, ' + distanceY + 'px, 0)');
-                    }
+                    
+                    isMoved = true;
+                    _this.setZoomSwipeStyles(_$el, distance);
                 }
 
             }
@@ -518,6 +510,40 @@
 
     };
 
+    Zoom.prototype.getZoomSwipeCords = function (startCoords, endCoords, allowX, allowY, possibleSwipeCords, dataY, dataX) {
+        var distance = {};
+        if (allowY) {
+
+            distance.y = (-Math.abs(dataY)) + (endCoords.y - startCoords.y);
+
+            if (distance.y <= -possibleSwipeCords.maxY) {
+                var diffMaxY = -possibleSwipeCords.maxY - distance.y;
+                distance.y = (-possibleSwipeCords.maxY) - (diffMaxY / 6);
+            } else if (distance.y >= -possibleSwipeCords.minY) {
+                var diffMinY = distance.y - (-possibleSwipeCords.minY);
+                distance.y = (-possibleSwipeCords.minY) + (diffMinY / 6);
+            }
+
+        } else {
+            distance.y = -Math.abs(dataY);
+        }
+
+        if (allowX) {
+            distance.x = (-Math.abs(dataX)) + (endCoords.x - startCoords.x);
+            if (distance.x <= -possibleSwipeCords.maxX) {
+                var diffMaxX = -possibleSwipeCords.maxX - distance.x;
+                distance.x = (-possibleSwipeCords.maxX) - (diffMaxX / 6);
+            } else if (distance.x >= -possibleSwipeCords.minX) {
+                var diffMinX = distance.x - (-possibleSwipeCords.minX);
+                distance.x = (-possibleSwipeCords.minX) + (diffMinX / 6);
+            }
+        } else {
+            distance.x = -Math.abs(dataX);
+        }
+
+        return distance;
+    }
+
     Zoom.prototype.zoomDrag = function () {
 
         var _this = this;
@@ -536,12 +562,19 @@
         var startTime;
         var endTime;
 
+        var possibleSwipeCords;
+
+        var dataY;
+        var dataX;
+        var _$el;
+
         _this.core.$slide.on('mousedown.lg.zoom', function (e) {
 
             startTime = new Date();
 
             // execute only on .lg-object
             var $image = _this.core.$slide.eq(_this.core.index).find('.lg-object');
+            _$el = _this.core.$slide.eq(_this.core.index).find('.lg-img-wrap');
 
             allowY = $image.prop('offsetHeight') * $image.attr('data-scale') > _this.core.$outer.find('.lg').height();
             allowX = $image.prop('offsetWidth') * $image.attr('data-scale') > _this.core.$outer.find('.lg').width();
@@ -554,53 +587,36 @@
                         y: e.pageY
                     };
 
+                    possibleSwipeCords = _this.getPossibleSwipeCords();
+
                     isDraging = true;
+
+                    dataY = _$el.attr('data-y');
+                    dataX = _$el.attr('data-x');
 
                     // ** Fix for webkit cursor issue https://code.google.com/p/chromium/issues/detail?id=26723
                     _this.core.$outer.scrollLeft += 1;
                     _this.core.$outer.scrollLeft -= 1;
 
-                    _this.core.$outer.removeClass('lg-grab').addClass('lg-grabbing lg-zoom-drag-transition');
+                    _this.core.$outer.removeClass('lg-grab').addClass('lg-grabbing lg-zoom-drag-transition lg-zoom-dragging');
+                        // reset opacity and transition duration
                 }
             }
         });
 
         $(window).on('mousemove.lg.zoom', function (e) {
             if (isDraging) {
-                var _$el = _this.core.$slide.eq(_this.core.index).find('.lg-img-wrap');
-                var distanceX;
-                var distanceY;
-
+                
                 isMoved = true;
                 endCoords = {
                     x: e.pageX,
                     y: e.pageY
                 };
 
-                // reset opacity and transition duration
-                console.log('%c adding lg-zoom-dragging ', 'background: #222; color: #bada55');
-                _this.core.$outer.addClass('lg-zoom-dragging');
+                var distance = _this.getZoomSwipeCords(startCoords, endCoords, allowX, allowY, possibleSwipeCords, dataY, dataX);
 
-                if (allowY) {
-                    distanceY = (-Math.abs(_$el.attr('data-y'))) + (endCoords.y - startCoords.y);
-                } else {
-                    distanceY = -Math.abs(_$el.attr('data-y'));
-                }
-
-                if (allowX) {
-                    distanceX = (-Math.abs(_$el.attr('data-x'))) + (endCoords.x - startCoords.x);
-                } else {
-                    distanceX = -Math.abs(_$el.attr('data-x'));
-                }
-
-                if (_this.core.s.useLeftForZoom) {
-                    _$el.css({
-                        left: distanceX + 'px',
-                        top: distanceY + 'px'
-                    });
-                } else {
-                    _$el.css('transform', 'translate3d(' + distanceX + 'px, ' + distanceY + 'px, 0)');
-                }
+                _this.setZoomSwipeStyles(_$el, distance);
+            
             }
         });
 
@@ -630,6 +646,21 @@
         });
     };
 
+    Zoom.prototype.getPossibleSwipeCords = function (){
+
+        var possibleCords = {};
+        var _$lg = this.core.$outer.find('.lg');
+        var $image = this.core.$slide.eq(this.core.index).find('.lg-object');
+
+        possibleCords.minY = (_$lg.height() - $image.innerHeight()) / 2;
+        possibleCords.maxY = Math.abs(($image.innerHeight() * Math.abs($image.attr('data-scale'))) - _$lg.height() + possibleCords.minY);
+
+        possibleCords.minX = (_$lg.width() - $image.innerWidth()) / 2;
+
+        possibleCords.maxX = Math.abs(($image.innerWidth() * Math.abs($image.attr('data-scale'))) - _$lg.width() + possibleCords.minX);
+        return possibleCords;
+    }
+
     Zoom.prototype.touchendZoom = function (startCoords, endCoords, allowX, allowY, touchDuration) {
 
         var distanceXnew = endCoords.x - startCoords.x;
@@ -647,51 +678,43 @@
 
         var _this = this;
         var _$el = _this.core.$slide.eq(_this.core.index).find('.lg-img-wrap');
-        var $image = _this.core.$slide.eq(_this.core.index).find('.lg-object');
-        var distanceX = (-Math.abs(_$el.attr('data-x'))) + (distanceXnew);
-        var distanceY = (-Math.abs(_$el.attr('data-y'))) + (distanceYnew);
-        var minY = (_this.core.$outer.find('.lg').height() - $image.prop('offsetHeight')) / 2;
-        var maxY = Math.abs(($image.prop('offsetHeight') * Math.abs($image.attr('data-scale'))) - _this.core.$outer.find('.lg').height() + minY);
-        var minX = (_this.core.$outer.find('.lg').width() - $image.prop('offsetWidth')) / 2;
-        var maxX = Math.abs(($image.prop('offsetWidth') * Math.abs($image.attr('data-scale'))) - _this.core.$outer.find('.lg').width() + minX);
+        var distance = {};
+
+        distance.x = (-Math.abs(_$el.attr('data-x'))) + (distanceXnew);
+        distance.y = (-Math.abs(_$el.attr('data-y'))) + (distanceYnew);
+
+        var possibleSwipeCords = _this.getPossibleSwipeCords();
 
         if ((Math.abs(distanceXnew) > 15) || (Math.abs(distanceYnew) > 15)) {
             if (allowY) {
-                if (distanceY <= -maxY) {
-                    distanceY = -maxY;
-                } else if (distanceY >= -minY) {
-                    distanceY = -minY;
+                if (distance.y <= -possibleSwipeCords.maxY) {
+                    distance.y = -possibleSwipeCords.maxY;
+                } else if (distance.y >= -possibleSwipeCords.minY) {
+                    distance.y = -possibleSwipeCords.minY;
                 }
             }
 
             if (allowX) {
-                if (distanceX <= -maxX) {
-                    distanceX = -maxX;
-                } else if (distanceX >= -minX) {
-                    distanceX = -minX;
+                if (distance.x <= -possibleSwipeCords.maxX) {
+                    distance.x = -possibleSwipeCords.maxX;
+                } else if (distance.x >= -possibleSwipeCords.minX) {
+                    distance.x = -possibleSwipeCords.minX;
                 }
             }
 
             if (allowY) {
-                _$el.attr('data-y', Math.abs(distanceY));
+                _$el.attr('data-y', Math.abs(distance.y));
             } else {
-                distanceY = -Math.abs(_$el.attr('data-y'));
+                distance.y = -Math.abs(_$el.attr('data-y'));
             }
 
             if (allowX) {
-                _$el.attr('data-x', Math.abs(distanceX));
+                _$el.attr('data-x', Math.abs(distance.x));
             } else {
-                distanceX = -Math.abs(_$el.attr('data-x'));
+                distance.x = -Math.abs(_$el.attr('data-x'));
             }
 
-            if (_this.core.s.useLeftForZoom) {
-                _$el.css({
-                    left: distanceX + 'px',
-                    top: distanceY + 'px'
-                });
-            } else {
-                _$el.css('transform', 'translate3d(' + distanceX + 'px, ' + distanceY + 'px, 0)');
-            }
+            _this.setZoomSwipeStyles(_$el, distance);
 
             _this.positionChanged = true;
 
@@ -715,3 +738,4 @@
     $.fn.lightGallery.modules.zoom = Zoom;
 
 })();
+    
