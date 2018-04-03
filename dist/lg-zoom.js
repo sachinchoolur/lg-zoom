@@ -1,6 +1,6 @@
-/*! lg-zoom - v1.1.0 - 2017-08-08
+/*! lg-zoom - v1.1.0 - 2018-04-03
 * http://sachinchoolur.github.io/lightGallery
-* Copyright (c) 2017 Sachin N; Licensed GPLv3 */
+* Copyright (c) 2018 Sachin N; Licensed GPLv3 */
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -8,13 +8,13 @@
     define(['jquery'], function (a0) {
       return (factory(a0));
     });
-  } else if (typeof exports === 'object') {
+  } else if (typeof module === 'object' && module.exports) {
     // Node. Does not work with strict CommonJS, but
     // only CommonJS-like environments that support module.exports,
     // like Node.
     module.exports = factory(require('jquery'));
   } else {
-    factory(jQuery);
+    factory(root["jQuery"]);
   }
 }(this, function ($) {
 
@@ -53,9 +53,12 @@
             this.zoomabletimeout = false;
 
             // Set the initial value center
-            this.pageX = $(window).width() / 2;
-            this.pageY = ($(window).height() / 2) + $(window).scrollTop();
+            this.pageX = $(window).width();
+            this.pageY = ($(window).height()) + $(window).scrollTop();
         }
+
+        this.currentX = 0;
+        this.currentY = 0;
 
         return this;
     };
@@ -109,28 +112,42 @@
         var zoom = function(scaleVal) {
 
             var $image = _this.core.$outer.find('.lg-current .lg-image');
-            var _x;
-            var _y;
+            // Set this each zoom, because changing slides wipes out the style of the element
+            // So we'd lose it if we set it only when the slide is first loaded
+            $image.attr("style", "transform-origin: 50%;");
 
-            // Find offset manually to avoid issue after zoom
-            var offsetX = ($(window).width() - $image.prop('offsetWidth')) / 2;
-            var offsetY = (($(window).height() - $image.prop('offsetHeight')) / 2) + $(window).scrollTop();
+            var $imageWrap = $image.parent();
 
-            _x = _this.pageX - offsetX;
-            _y = _this.pageY - offsetY;
+            var x = parseInt($imageWrap.attr('data-x'), 10) || 0;
+            var y = parseInt($imageWrap.attr('data-y'), 10) || 0;
 
-            var x = (scaleVal - 1) * (_x);
-            var y = (scaleVal - 1) * (_y);
-
+            var oldWidth = $image[0].getBoundingClientRect().width;
+            var oldHeight = $image[0].getBoundingClientRect().height;
+            var oldScale = parseInt($image.attr('data-scale'));
             $image.css('transform', 'scale3d(' + scaleVal + ', ' + scaleVal + ', 1)').attr('data-scale', scaleVal);
+            var newWidth = oldWidth + ((oldScale > scale) ? -$image[0].offsetWidth : $image[0].offsetWidth);
+            var newHeight = oldHeight + ((oldScale > scale) ? -$image[0].offsetHeight : $image[0].offsetHeight);
+
+            var oldXAsPercentOfOldWidth = (x / oldWidth) * 100;
+            var newX = ((newWidth / 100) * oldXAsPercentOfOldWidth) || 0;
+            var oldYAsPercentOfOldHeight = (y / oldHeight) * 100;
+            var newY = ((newHeight / 100) * oldYAsPercentOfOldHeight) || 0;
+
+            if (Math.abs(newX) > newWidth / 2) {
+                newX = (newX < 0 ? -newWidth : newWidth) / 2;
+            }
+
+            if (Math.abs(newY) > newHeight / 2) {
+                newY = (newY < 0 ? -newHeight : newHeight) / 2;
+            }
 
             if (_this.core.s.useLeftForZoom) {
-                $image.parent().css({
-                    left: -x + 'px',
-                    top: -y + 'px'
-                }).attr('data-x', x).attr('data-y', y);
+                $imageWrap.css({
+                    left: newX + 'px',
+                    top: newY + 'px'
+                }).attr('data-x', newX).attr('data-y', newY);
             } else {
-                $image.parent().css('transform', 'translate3d(-' + x + 'px, -' + y + 'px, 0)').attr('data-x', x).attr('data-y', y);
+                $imageWrap.css('transform', 'translate3d(' + newX + 'px, ' + newY + 'px, 0)').attr('data-x', newX).attr('data-y', newY);
             }
         };
 
@@ -169,8 +186,8 @@
             }
 
             if (fromIcon) {
-                _this.pageX = $(window).width() / 2;
-                _this.pageY = ($(window).height() / 2) + $(window).scrollTop();
+                _this.pageX = $(window).width();
+                _this.pageY = ($(window).height()) + $(window).scrollTop();
             } else {
                 _this.pageX = event.pageX || event.originalEvent.targetTouches[0].pageX;
                 _this.pageY = event.pageY || event.originalEvent.targetTouches[0].pageY;
@@ -212,8 +229,8 @@
 
         // Update zoom on resize and orientationchange
         $(window).on('resize.lg.zoom scroll.lg.zoom orientationchange.lg.zoom', function() {
-            _this.pageX = $(window).width() / 2;
-            _this.pageY = ($(window).height() / 2) + $(window).scrollTop();
+            _this.pageX = $(window).width();
+            _this.pageY = ($(window).height()) + $(window).scrollTop();
             zoom(scale);
         });
 
@@ -254,9 +271,9 @@
         this.core.$slide.find('.lg-img-wrap').removeAttr('style data-x data-y');
         this.core.$slide.find('.lg-image').removeAttr('style data-scale');
 
-        // Reset pagx pagy values to center
-        this.pageX = $(window).width() / 2;
-        this.pageY = ($(window).height() / 2) + $(window).scrollTop();
+        // Reset pageX pageY values to center
+        this.pageX = $(window).width();
+        this.pageY = ($(window).height()) + $(window).scrollTop();
     };
 
     Zoom.prototype.zoomSwipe = function() {
@@ -341,7 +358,7 @@
                 if (isMoved) {
                     isMoved = false;
                     _this.core.$outer.removeClass('lg-zoom-dragging');
-                    _this.touchendZoom(startCoords, endCoords, allowX, allowY);
+                    _this.touchendZoom(allowX, allowY);
 
                 }
             }
@@ -380,7 +397,6 @@
                     };
 
                     isDraging = true;
-
                     // ** Fix for webkit cursor issue https://code.google.com/p/chromium/issues/detail?id=26723
                     _this.core.$outer.scrollLeft += 1;
                     _this.core.$outer.scrollLeft -= 1;
@@ -404,17 +420,18 @@
 
                 // reset opacity and transition duration
                 _this.core.$outer.addClass('lg-zoom-dragging');
-
+                var nextY = (parseInt(_$el.attr('data-y'))) + (endCoords.y - startCoords.y);
                 if (allowY) {
-                    distanceY = (-Math.abs(_$el.attr('data-y'))) + (endCoords.y - startCoords.y);
+                    distanceY = nextY;
                 } else {
-                    distanceY = -Math.abs(_$el.attr('data-y'));
+                    distanceY = _this.currentY;
                 }
 
+                var nextX = (parseInt(_$el.attr('data-x'))) + (endCoords.x - startCoords.x);
                 if (allowX) {
-                    distanceX = (-Math.abs(_$el.attr('data-x'))) + (endCoords.x - startCoords.x);
+                    distanceX = nextX;
                 } else {
-                    distanceX = -Math.abs(_$el.attr('data-x'));
+                    distanceX = _this.currentX;
                 }
 
                 if (_this.core.s.useLeftForZoom) {
@@ -425,6 +442,8 @@
                 } else {
                     _$el.css('transform', 'translate3d(' + distanceX + 'px, ' + distanceY + 'px, 0)');
                 }
+                _this.currentX = distanceX;
+                _this.currentY = distanceY;
             }
         });
 
@@ -440,7 +459,7 @@
                         x: e.pageX,
                         y: e.pageY
                     };
-                    _this.touchendZoom(startCoords, endCoords, allowX, allowY);
+                    _this.touchendZoom(allowX, allowY);
 
                 }
 
@@ -452,56 +471,43 @@
         });
     };
 
-    Zoom.prototype.touchendZoom = function(startCoords, endCoords, allowX, allowY) {
+    Zoom.prototype.touchendZoom = function(allowX, allowY) {
 
         var _this = this;
         var _$el = _this.core.$slide.eq(_this.core.index).find('.lg-img-wrap');
         var $image = _this.core.$slide.eq(_this.core.index).find('.lg-object');
-        var distanceX = (-Math.abs(_$el.attr('data-x'))) + (endCoords.x - startCoords.x);
-        var distanceY = (-Math.abs(_$el.attr('data-y'))) + (endCoords.y - startCoords.y);
-        var minY = (_this.core.$outer.find('.lg').height() - $image.prop('offsetHeight')) / 2;
-        var maxY = Math.abs(($image.prop('offsetHeight') * Math.abs($image.attr('data-scale'))) - _this.core.$outer.find('.lg').height() + minY);
-        var minX = (_this.core.$outer.find('.lg').width() - $image.prop('offsetWidth')) / 2;
-        var maxX = Math.abs(($image.prop('offsetWidth') * Math.abs($image.attr('data-scale'))) - _this.core.$outer.find('.lg').width() + minX);
+        var distanceX = _this.currentX;
+        var distanceY = _this.currentY;
+        var minY = (($image.prop('offsetHeight') * Math.abs($image.attr('data-scale'))) - _this.core.$outer.find('.lg').height()) / 2;
+        var maxY = -minY;
+        var minX = (($image.prop('offsetWidth') * Math.abs($image.attr('data-scale'))) - _this.core.$outer.find('.lg').width()) / 2;
+        var maxX = -minX;
 
-        if ((Math.abs(endCoords.x - startCoords.x) > 15) || (Math.abs(endCoords.y - startCoords.y) > 15)) {
-            if (allowY) {
-                if (distanceY <= -maxY) {
-                    distanceY = -maxY;
-                } else if (distanceY >= -minY) {
-                    distanceY = -minY;
-                }
+        if (allowY) {
+            if (distanceY <= maxY) {
+                distanceY = maxY;
+            } else if (distanceY >= minY) {
+                distanceY = minY;
             }
+            _$el.attr('data-y', distanceY);
+        }
 
-            if (allowX) {
-                if (distanceX <= -maxX) {
-                    distanceX = -maxX;
-                } else if (distanceX >= -minX) {
-                    distanceX = -minX;
-                }
+        if (allowX) {
+            if (distanceX <= maxX) {
+                distanceX = maxX;
+            } else if (distanceX >= minX) {
+                distanceX = minX;
             }
+            _$el.attr('data-x', distanceX);
+        }
 
-            if (allowY) {
-                _$el.attr('data-y', Math.abs(distanceY));
-            } else {
-                distanceY = -Math.abs(_$el.attr('data-y'));
-            }
-
-            if (allowX) {
-                _$el.attr('data-x', Math.abs(distanceX));
-            } else {
-                distanceX = -Math.abs(_$el.attr('data-x'));
-            }
-
-            if (_this.core.s.useLeftForZoom) {
-                _$el.css({
-                    left: distanceX + 'px',
-                    top: distanceY + 'px'
-                });
-            } else {
-                _$el.css('transform', 'translate3d(' + distanceX + 'px, ' + distanceY + 'px, 0)');
-            }
-
+        if (_this.core.s.useLeftForZoom) {
+            _$el.css({
+                left: distanceX + 'px',
+                top: distanceY + 'px'
+            });
+        } else {
+            _$el.css('transform', 'translate3d(' + distanceX + 'px, ' + distanceY + 'px, 0)');
         }
     };
 
