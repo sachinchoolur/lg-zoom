@@ -43,10 +43,10 @@
     Zoom.prototype.init = function() {
 
         var _this = this;
-        var zoomIcons = '<span id="lg-zoom-in" class="lg-icon"></span><span id="lg-zoom-out" class="lg-icon"></span>';
+        var zoomIcons = '<button aria-label="Zoom in" id="lg-zoom-in" class="lg-icon"></button><button aria-label="Zoom out" id="lg-zoom-out" class="lg-icon"></button>';
 
         if (_this.core.s.actualSize) {
-            zoomIcons += '<span id="lg-actual-size" class="lg-icon"></span>';
+            zoomIcons += '<button aria-label="Actual size" id="lg-actual-size" class="lg-icon"></button>';
         }
 
         if (_this.core.s.useLeftForZoom) {
