@@ -1,6 +1,6 @@
 {
   "name": "lg-zoom",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Zoom module for lightgallery.",
   "keywords": [
     "gallery",
@@ -44,7 +44,6 @@
     "grunt-contrib-copy": "^0.8.0",
     "grunt-contrib-cssmin": "^0.12.1",
     "grunt-contrib-jshint": "^0.10.0",
-    "grunt-contrib-qunit": "^0.5.1",
     "grunt-contrib-sass": "^0.9.2",
     "grunt-contrib-uglify": "^0.7.0",
     "grunt-contrib-watch": "^0.6.1",

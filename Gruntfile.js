@@ -87,7 +87,8 @@ module.exports = function(grunt) {
         },
         jshint: {
             options: {
-                reporter: require('jshint-stylish')
+                reporter: require('jshint-stylish'),
+                reporterOutput: ''
             },
             gruntfile: {
                 options: {
@@ -106,10 +107,6 @@ module.exports = function(grunt) {
             gruntfile: {
                 files: '<%= jshint.gruntfile.src %>',
                 tasks: ['jshint:gruntfile']
-            },
-            src: {
-                files: '<%= jshint.src.src %>',
-                tasks: ['jshint:src', 'qunit']
             },
             css: {
                 files: 'src/**/*.scss',
