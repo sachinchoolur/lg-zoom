@@ -1,4 +1,4 @@
-/*! lg-zoom - v1.3.0-beta.0 - October-05-2020
+/*! lg-zoom - v1.3.0 - October-14-2020
 * http://sachinchoolur.github.io/lightGallery
 * Copyright (c) 2020 Sachin N; Licensed GPLv3 */
 
