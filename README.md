@@ -4,7 +4,7 @@
 
 # Zoom module for [lightGallery](http://sachinchoolur.github.io/lightGallery/)
 A customizable, modular, responsive, lightbox gallery plugin for jQuery.
-![lightgallery](https://raw.githubusercontent.com/sachinchoolur/lightGallery/master/lib/lg.png)
+![lightgallery](https://github.com/sachinchoolur/lightGallery)
 
 Main features
 ---
